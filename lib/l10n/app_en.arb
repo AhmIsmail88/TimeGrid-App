@@ -144,4 +144,8 @@
   "allOffices": "All offices",
   "exportHistory": "Export history",
   "noExportsYet": "Nothing exported yet"
+,
+  "previousWeek": "Previous week",
+  "nextWeek": "Next week",
+  "allDays": "All days"
 }

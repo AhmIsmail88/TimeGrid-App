@@ -374,9 +374,9 @@ void main() {
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), '2');
 
-    // The first field on the form is the date. Walk the picker back one month
-    // and take day 1, which always lands in the previous reporting period.
-    await tester.tap(find.byType(InkWell).first);
+    // Open the date picker, walk it back one month and take day 1, which
+    // always lands in the previous reporting period.
+    await tester.tap(find.byKey(const Key('entry-date-field')));
     await tester.pumpAndSettle();
 
     final datePicker = find.byType(DatePickerDialog);

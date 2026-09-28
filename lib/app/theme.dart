@@ -23,6 +23,22 @@ class AppColors {
   static const darkTextPrimary = Color(0xFFE6EDF3);
   static const darkPrimary = Color(0xFF7CB4FF);
   static const darkAccent = Color(0xFF4DD0E1);
+
+  // Small auxiliary chips (the week strip's unselected days, the lock badge
+  // on a reported entry): a pale blue that carries the primary hue without
+  // competing with it.
+  static const chipLight = Color(0xFFE8F1FF);
+  static const onChipLight = Color(0xFF1F4E9C);
+  static const chipDark = Color(0xFF1B2E4A);
+  static const onChipDark = Color(0xFF9EC5FF);
+
+  /// Background for an auxiliary chip on the given theme brightness.
+  static Color chipBackground(Brightness brightness) =>
+      brightness == Brightness.dark ? chipDark : chipLight;
+
+  /// Text and icon colour that sits on [chipBackground].
+  static Color onChip(Brightness brightness) =>
+      brightness == Brightness.dark ? onChipDark : onChipLight;
 }
 
 class AppTheme {
@@ -87,14 +103,32 @@ class AppTheme {
     required Color text,
   }) {
     final radius = BorderRadius.circular(16);
+    // On the light theme the cards sit on a tinted background, so a soft
+    // shadow lifts them off it without needing an outline. On dark, a shadow
+    // would be invisible, so the hairline border keeps doing that job.
+    final isDark = base.brightness == Brightness.dark;
     return base.copyWith(
       cardTheme: CardThemeData(
         color: surface,
-        elevation: 0,
+        elevation: isDark ? 0 : 2,
+        shadowColor: const Color(0x14000000),
+        surfaceTintColor: Colors.transparent,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: radius,
-          side: BorderSide(color: border),
+          side: BorderSide(color: isDark ? border : Colors.transparent),
+        ),
+      ),
+      chipTheme: base.chipTheme.copyWith(
+        backgroundColor: AppColors.chipBackground(base.brightness),
+        labelStyle: TextStyle(
+          color: AppColors.onChip(base.brightness),
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+        ),
+        side: BorderSide.none,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
         ),
       ),
       appBarTheme: AppBarTheme(

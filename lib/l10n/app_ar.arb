@@ -144,4 +144,8 @@
   "allOffices": "كل المكاتب",
   "exportHistory": "سجل التصدير",
   "noExportsYet": "لسه مفيش تقارير مصدّرة"
+,
+  "previousWeek": "الأسبوع السابق",
+  "nextWeek": "الأسبوع التالي",
+  "allDays": "كل الأيام"
 }

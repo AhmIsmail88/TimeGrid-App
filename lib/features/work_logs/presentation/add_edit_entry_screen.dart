@@ -12,6 +12,7 @@ import '../../../core/providers/providers.dart';
 import '../../../core/utils/bidi.dart';
 import '../../../core/repositories/work_log_repository.dart';
 import '../../../core/widgets/searchable_picker.dart';
+import '../../../core/widgets/week_strip.dart';
 
 /// PRD §7.3 / §7.5 — same form for Add and Edit. If [entryId] is null
 /// this is Add Entry (date defaults to today); otherwise it loads and
@@ -479,7 +480,15 @@ class _AddEditEntryScreenState extends ConsumerState<AddEditEntryScreen> {
         padding: const EdgeInsets.all(16),
         children: [
           _FieldLabel(l10n.date),
+          // The week strip is the fast path: one tap instead of opening the
+          // full date picker. The picker below still covers far-away dates.
+          WeekStrip(
+            selectedDate: _date,
+            onDaySelected: (day) => setState(() => _date = day),
+          ),
+          const SizedBox(height: 8),
           InkWell(
+            key: const Key('entry-date-field'),
             onTap: _pickDate,
             child: InputDecorator(
               decoration: const InputDecoration(),

@@ -4,10 +4,13 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../app/localization/gen/app_localizations.dart';
+import '../../../core/models/locked_period.dart';
 import '../../../core/models/work_log.dart';
 import '../../../core/providers/providers.dart';
 import '../../../core/utils/bidi.dart';
 import '../../../core/repositories/work_log_repository.dart';
+import '../../../core/widgets/week_strip.dart';
+import 'widgets/work_log_card.dart';
 
 final _workLogsFilterProvider = StateProvider<WorkLogFilter>((ref) {
   return const WorkLogFilter();
@@ -40,12 +43,36 @@ class _WorkLogsScreenState extends ConsumerState<WorkLogsScreen> {
     ref.read(_workLogsFilterProvider.notifier).state = update(current);
   }
 
+  /// Tapping the already-selected day clears the day filter again; tapping
+  /// any other day narrows the list to just that day.
+  void _selectDay(DateTime day) {
+    final current = ref.read(_workLogsFilterProvider);
+    final start = current.periodStart;
+    final alreadyThatDay = start != null &&
+        current.periodEnd != null &&
+        start.year == day.year &&
+        start.month == day.month &&
+        start.day == day.day;
+    _applyFilter((f) => WorkLogFilter(
+          periodStart: alreadyThatDay ? null : day,
+          periodEnd: alreadyThatDay ? null : day,
+          projectId: f.projectId,
+          taskId: f.taskId,
+          searchText: f.searchText,
+          newestFirst: f.newestFirst,
+        ));
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final locale = Localizations.localeOf(context).languageCode;
     final logs = ref.watch(_filteredWorkLogsProvider);
     final filter = ref.watch(_workLogsFilterProvider);
+    // One read for the whole screen: the chip on each card is decided in
+    // memory instead of one database call per row.
+    final lockedPeriods =
+        ref.watch(lockedPeriodsProvider).value ?? const <LockedPeriod>[];
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.workLogs)),
@@ -78,6 +105,26 @@ class _WorkLogsScreenState extends ConsumerState<WorkLogsScreen> {
                   )),
             ),
           ),
+          WeekStrip(
+            selectedDate: filter.periodStart,
+            onDaySelected: _selectDay,
+          ),
+          if (filter.periodStart != null || filter.periodEnd != null)
+            Padding(
+              padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 0),
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: ActionChip(
+                  label: Text(l10n.allDays),
+                  onPressed: () => _applyFilter((f) => WorkLogFilter(
+                        projectId: f.projectId,
+                        taskId: f.taskId,
+                        searchText: f.searchText,
+                        newestFirst: f.newestFirst,
+                      )),
+                ),
+              ),
+            ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Row(
@@ -120,28 +167,17 @@ class _WorkLogsScreenState extends ConsumerState<WorkLogsScreen> {
                   return Center(child: Text(l10n.noEntriesYet));
                 }
                 return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  padding: const EdgeInsets.fromLTRB(12, 6, 12, 88),
                   itemCount: items.length,
                   itemBuilder: (context, index) {
                     final view = items[index];
-                    return Card(
-                      child: ListTile(
-                        title: Text(view.taskName(locale)),
-                        subtitle: Text(
-                            '${view.projectName(locale)} · ${DateFormat('d MMM yyyy').format(DateTime.parse(view.log.workDate))}'),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text('${view.log.hours}h',
-                                style: const TextStyle(fontWeight: FontWeight.bold)),
-                            IconButton(
-                              icon: const Icon(Icons.delete_outline),
-                              onPressed: () => _confirmDelete(context, view, l10n, locale),
-                            ),
-                          ],
-                        ),
-                        onTap: () => context.push('/edit-entry/${view.log.id}'),
-                      ),
+                    final workDate = DateTime.parse(view.log.workDate);
+                    return WorkLogCard(
+                      view: view,
+                      locale: locale,
+                      isLocked: lockedPeriods.any((p) => p.contains(workDate)),
+                      onTap: () => context.push('/edit-entry/${view.log.id}'),
+                      onDelete: () => _confirmDelete(context, view, l10n, locale),
                     );
                   },
                 );
