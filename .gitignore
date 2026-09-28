@@ -40,7 +40,7 @@ backups/
 Time Sheet.xls
 Time Sheet Example..pdf
 # Exported work data and the migration file produced from it.
-TimeGrid_Legacy_Import.json
+TimeGrid_Legacy_Import*.json
 TimeGrid_Sample_Export.xls
 TimeGrid_Sample_Timesheet.pdf
 # Personal working documents.
