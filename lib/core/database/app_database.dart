@@ -29,7 +29,8 @@ class AppDatabase {
   ///  * 2 — consulting offices/clients, and the office a project belongs to
   ///  * 3 — periods already reported to an office, locked against edits
   ///  * 4 — a log of the timesheets that have been produced
-  static const int schemaVersion = 4;
+  ///  * 5 — contact details for an office: email, phone, whatsapp
+  static const int schemaVersion = 5;
 
   /// Name of the database file inside the app's databases directory.
   /// Not const, and overridable, so tests can work on their own file and
@@ -50,6 +51,10 @@ class AppDatabase {
 
   // --- Shared DDL, so creating and migrating can never drift apart --------
 
+  // This is the v2 shape, and it has to stay that way: the v1 -> v2
+  // migration creates exactly the table that release shipped. Fresh
+  // installs get the current shape through _createSchema, which applies
+  // the later column additions below.
   static const String _createOfficesTable = '''
       CREATE TABLE offices (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -60,6 +65,15 @@ class AppDatabase {
         updated_at TEXT NOT NULL
       );
     ''';
+
+  /// 4 -> 5: the contact details an office is sent the timesheet through.
+  /// Kept as one list so a fresh database and an upgraded one can never
+  /// disagree about the shape of the table.
+  static const List<String> _addOfficeContactColumns = <String>[
+    'ALTER TABLE offices ADD COLUMN email TEXT;',
+    'ALTER TABLE offices ADD COLUMN phone TEXT;',
+    'ALTER TABLE offices ADD COLUMN whatsapp TEXT;',
+  ];
 
   static const String _addProjectOfficeColumn =
       'ALTER TABLE projects ADD COLUMN office_id INTEGER;';
@@ -110,6 +124,13 @@ class AppDatabase {
     (db) async {
       await db.execute(_createExportsTable);
       await db.execute(_createExportsIndex);
+    },
+    // 4 -> 5: contact details for an office, used when sending it the
+    // timesheet. Nullable columns, so old rows keep every value they had.
+    (db) async {
+      for (final statement in _addOfficeContactColumns) {
+        await db.execute(statement);
+      }
     },
   ];
 
@@ -191,6 +212,11 @@ class AppDatabase {
     final batch = db.batch();
 
     batch.execute(_createOfficesTable);
+    // A brand-new database is created at the current version, so it needs
+    // the same column additions the migration would have applied.
+    for (final statement in _addOfficeContactColumns) {
+      batch.execute(statement);
+    }
 
     // office_id is nullable on purpose: projects created before the office
     // feature existed simply have none, and a project is never deleted just

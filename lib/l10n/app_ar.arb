@@ -148,4 +148,16 @@
   "previousWeek": "الأسبوع السابق",
   "nextWeek": "الأسبوع التالي",
   "allDays": "كل الأيام"
+,
+  "email": "الإيميل",
+  "phone": "رقم الهاتف",
+  "whatsapp": "واتساب",
+  "whatsappSameAsPhone": "بيتعبّى تلقائيًا من رقم الهاتف",
+  "validationEmailInvalid": "اكتب إيميل صحيح",
+  "shareReportTitle": "إرسال التايم شيت",
+  "shareViaGmail": "جيميل",
+  "shareOtherApps": "تطبيقات أخرى",
+  "shareWhatsappHint": "بيفتح واتساب واختار محادثة المكتب",
+  "shareMissingEmail": "ضيف إيميل المكتب الأول من شاشة المكاتب الاستشارية",
+  "shareFailed": "تعذّرت مشاركة الملف"
 }

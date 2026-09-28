@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/localization/gen/app_localizations.dart';
 import '../../../core/models/office.dart';
 import '../../../core/providers/providers.dart';
+import '../../../core/services/report_sharing.dart';
 
 /// The consulting offices / clients the user delivers work for.
 ///
@@ -74,8 +75,15 @@ class _OfficesScreenState extends ConsumerState<OfficesScreen> {
                       child: ListTile(
                         leading: const Icon(Icons.business_outlined),
                         title: Text(office.displayName(locale)),
-                        subtitle:
-                            Text(office.isArchived ? l10n.archived : l10n.active),
+                        subtitle: Text(
+                          [
+                            office.isArchived ? l10n.archived : l10n.active,
+                            if (office.contactSummary.isNotEmpty)
+                              office.contactSummary,
+                          ].join(' \u00b7 '),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                         trailing: PopupMenuButton<String>(
                           onSelected: (action) =>
                               _handleAction(action, office, l10n),
@@ -150,36 +158,88 @@ class _OfficesScreenState extends ConsumerState<OfficesScreen> {
   Future<void> _showEditDialog(Office? existing, AppLocalizations l10n) async {
     final arController = TextEditingController(text: existing?.nameAr ?? '');
     final enController = TextEditingController(text: existing?.nameEn ?? '');
+    final emailController = TextEditingController(text: existing?.email ?? '');
+    final phoneController = TextEditingController(text: existing?.phone ?? '');
+    final whatsappController =
+        TextEditingController(text: existing?.whatsapp ?? '');
 
+    // WhatsApp follows the phone number until the user types a different
+    // value on purpose, which is the common case: one number for both.
+    var whatsappTouched = existing?.whatsapp.trim().isNotEmpty == true;
+    if (!whatsappTouched && whatsappController.text.isEmpty) {
+      whatsappController.text = phoneController.text;
+    }
+    phoneController.addListener(() {
+      if (!whatsappTouched) whatsappController.text = phoneController.text;
+    });
+
+    var emailError = false;
     final result = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(existing == null ? l10n.addOffice : l10n.edit),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: arController,
-              decoration: InputDecoration(labelText: l10n.arabicName),
-              textDirection: TextDirection.rtl,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: Text(existing == null ? l10n.addOffice : l10n.edit),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: arController,
+                  decoration: InputDecoration(labelText: l10n.arabicName),
+                  textDirection: TextDirection.rtl,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: enController,
+                  decoration: InputDecoration(labelText: l10n.englishName),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: emailController,
+                  decoration: InputDecoration(
+                    labelText: l10n.email,
+                    hintText: 'name@example.com',
+                    errorText:
+                        emailError ? l10n.validationEmailInvalid : null,
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                  autofillHints: const [AutofillHints.email],
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: phoneController,
+                  decoration: InputDecoration(labelText: l10n.phone),
+                  keyboardType: TextInputType.phone,
+                  autofillHints: const [AutofillHints.telephoneNumber],
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: whatsappController,
+                  decoration: InputDecoration(
+                    labelText: l10n.whatsapp,
+                    helperText: l10n.whatsappSameAsPhone,
+                  ),
+                  keyboardType: TextInputType.phone,
+                  onChanged: (v) => whatsappTouched = v.trim().isNotEmpty,
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: enController,
-              decoration: InputDecoration(labelText: l10n.englishName),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(l10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () {
+                final valid = isValidEmail(emailController.text);
+                setDialogState(() => emailError = !valid);
+                if (valid) Navigator.of(dialogContext).pop(true);
+              },
+              child: Text(l10n.save),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(l10n.save),
-          ),
-        ],
       ),
     );
 
@@ -191,11 +251,24 @@ class _OfficesScreenState extends ConsumerState<OfficesScreen> {
     final now = DateTime.now().toIso8601String();
     final repository = ref.read(officeRepositoryProvider);
     if (existing == null) {
-      await repository.insert(
-          Office(nameAr: ar, nameEn: en, createdAt: now, updatedAt: now));
+      await repository.insert(Office(
+        nameAr: ar,
+        nameEn: en,
+        email: emailController.text.trim(),
+        phone: phoneController.text.trim(),
+        whatsapp: whatsappController.text.trim(),
+        createdAt: now,
+        updatedAt: now,
+      ));
     } else {
-      await repository.update(
-          existing.copyWith(nameAr: ar, nameEn: en, updatedAt: now));
+      await repository.update(existing.copyWith(
+        nameAr: ar,
+        nameEn: en,
+        email: emailController.text.trim(),
+        phone: phoneController.text.trim(),
+        whatsapp: whatsappController.text.trim(),
+        updatedAt: now,
+      ));
     }
     ref.read(dataVersionProvider.notifier).state++;
   }

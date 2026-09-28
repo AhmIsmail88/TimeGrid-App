@@ -148,4 +148,16 @@
   "previousWeek": "Previous week",
   "nextWeek": "Next week",
   "allDays": "All days"
+,
+  "email": "Email",
+  "phone": "Phone number",
+  "whatsapp": "WhatsApp",
+  "whatsappSameAsPhone": "Filled in from the phone number",
+  "validationEmailInvalid": "Enter a valid email address",
+  "shareReportTitle": "Send the timesheet",
+  "shareViaGmail": "Gmail",
+  "shareOtherApps": "Other apps",
+  "shareWhatsappHint": "Opens WhatsApp - pick the office chat",
+  "shareMissingEmail": "Add the office email first, from the consulting offices screen",
+  "shareFailed": "Could not share the file"
 }

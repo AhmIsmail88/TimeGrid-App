@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--
+        A copy of the exported timesheet is placed in the app's cache before
+        it is handed to WhatsApp or Gmail, so that is the only directory the
+        FileProvider needs to expose.
+    -->
+    <cache-path name="shared_cache" path="shared/" />
+</paths>

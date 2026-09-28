@@ -5,7 +5,6 @@ import 'dart:io';
 
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../../../app/localization/gen/app_localizations.dart';
 import '../../../core/models/office.dart';
@@ -14,10 +13,10 @@ import '../../../core/widgets/office_picker.dart';
 import '../../../core/models/export_record.dart';
 import '../../../core/providers/providers.dart';
 import '../../../core/utils/bidi.dart';
-import '../../../core/services/file_sharer.dart';
 import '../data/excel_exporter.dart';
 import '../data/pdf_timesheet_exporter.dart';
 import '../domain/report_calculator.dart';
+import 'report_share_sheet.dart';
 
 final _reportDataProvider = FutureProvider<ReportData>((ref) async {
   ref.watch(dataVersionProvider);
@@ -109,7 +108,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         officeName: officeName,
       );
       if (!mounted) return;
-      _showExportSuccessDialog(result.file!.path.split('/').last, result.file!.path, l10n);
+      _showExportSuccessDialog(
+          result.file!.path.split('/').last, result.file!.path, l10n, data);
       await _offerToLockPeriod(data.period, l10n);
     } else {
       _showMessage(l10n.exportFailedTitle, _exportErrorMessage(result.errorMessage, l10n));
@@ -243,12 +243,14 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     );
     if (!mounted) return;
 
-    // Shares through the normal Android sheet, so it can go straight to the
-    // office by mail or WhatsApp.
-    await ref.read(fileSharerProvider).shareFile(
-          path: file.path,
-          subject: 'TimeGrid ${DateFormat('yyyy-MM-dd').format(data.period.start)}',
-        );
+    // Ask where it should go: WhatsApp, Gmail (opened with the office's
+    // email already filled in) or the system share sheet.
+    await showReportShareSheet(
+      context,
+      filePath: file.path,
+      period: data.period,
+      office: _currentOffice(),
+    );
     if (!mounted) return;
     await _offerToLockPeriod(data.period, l10n);
   }
@@ -296,28 +298,48 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     );
   }
 
-  void _showExportSuccessDialog(String fileName, String path, AppLocalizations l10n) {
+  /// The office the numbers are produced for, so the share sheet can pre-fill
+  /// its email and show its WhatsApp number.
+  Office? _currentOffice() {
+    final id = ref.read(reportOfficeProvider);
+    if (id == null) return null;
+    final offices = ref.read(officesProvider).value ?? const <Office>[];
+    for (final office in offices) {
+      if (office.id == id) return office;
+    }
+    return null;
+  }
+
+  void _showExportSuccessDialog(
+      String fileName, String path, AppLocalizations l10n, ReportData data) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: Text(l10n.exportSuccessTitle),
         content: Text(l10n.exportSuccessMessage(fileName)),
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop();
+              Navigator.of(dialogContext).pop();
               OpenFilex.open(path);
             },
             child: Text(l10n.openFile),
           ),
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop();
-              SharePlus.instance.share(ShareParams(files: [XFile(path)]));
+              Navigator.of(dialogContext).pop();
+              showReportShareSheet(
+                context,
+                filePath: path,
+                period: data.period,
+                office: _currentOffice(),
+              );
             },
             child: Text(l10n.shareFile),
           ),
-          FilledButton(onPressed: () => Navigator.of(context).pop(), child: const Text('OK')),
+          FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('OK')),
         ],
       ),
     );

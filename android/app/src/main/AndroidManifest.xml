@@ -26,6 +26,18 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!-- Hands the produced timesheet file to WhatsApp/Gmail: the app
+             copies it into its cache and shares a content:// URI, which is
+             the only way another app is allowed to read a file from here. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.sharing"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/sharing_paths" />
+        </provider>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data
@@ -57,5 +69,8 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+        <!-- Targets the share flow checks for before opening directly. -->
+        <package android:name="com.google.android.gm"/>
+        <package android:name="com.whatsapp"/>
     </queries>
 </manifest>
