@@ -102,6 +102,10 @@ lib/
 | Why the PDF is painted by Flutter instead of a PDF library | `lib/features/reports/data/pdf_timesheet_exporter.dart` |
 | Bidi isolation for dates inside Arabic text | `lib/core/utils/bidi.dart` |
 
+Longer notes — how the earlier Android build was migrated, the real structure
+of the company template, a measured PDF dead end, and the bidi fix — are in
+**[docs/NOTES.md](docs/NOTES.md)**.
+
 ---
 
 ## Getting started
