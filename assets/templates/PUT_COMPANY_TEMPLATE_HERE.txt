@@ -1,0 +1,5 @@
+Place the company's original Excel template (e.g. company_timesheet_template.xlsx)
+in this folder if you want to ship it bundled with the app, then load it via
+`rootBundle` and copy it to a writable path before opening it with the `excel`
+package (assets are read-only). Until a real template is provided, Settings
+lets the user pick any .xlsx file from device storage instead.

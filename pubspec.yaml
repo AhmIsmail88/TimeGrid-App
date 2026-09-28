@@ -1,0 +1,69 @@
+name: timegrid
+description: "TimeGrid — Track Work. Export Timesheets. تسجيل ساعات العمل وتصدير تقارير Excel بدون إنترنت."
+publish_to: 'none'
+version: 1.0.0+2
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.20.3
+
+  # State management
+  flutter_riverpod: ^2.5.1
+
+  # Routing
+  go_router: ^14.2.0
+
+  # Database
+  sqflite: ^2.3.3
+  path: ^1.9.0
+  path_provider: ^2.1.4
+
+  # Assembles the printable timesheet PDF (the page itself is painted by
+  # Flutter, so the Arabic is shaped correctly).
+  pdf: ^3.12.0
+
+  # Excel export (preserves an existing .xlsx template's formatting)
+  excel: ^4.0.6
+
+  # Legacy SpreadsheetML 2003 (.xls) template support
+  xml: ^6.6.1
+
+  # Sharing / opening the exported file
+  share_plus: ^13.3.0
+  open_filex: ^4.5.0
+
+  # Fingerprint / screen-lock gate in front of the app
+  local_auth: ^2.3.0
+
+  # Backup / restore file picking
+  file_picker: ^13.1.0
+
+  # IDs / formatting helpers
+  uuid: ^4.4.2
+  collection: ^1.18.0
+  package_info_plus: ^10.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  # Drives the app on a real device, including the platform PDF renderer.
+  integration_test:
+    sdk: flutter
+  # Runs the sqflite database logic on the host, so the data-safety
+  # behaviour can be tested without a device.
+  sqflite_common_ffi: ^2.3.0
+  # Lets the backup/restore tests point path_provider at a temp folder.
+  path_provider_platform_interface: ^2.1.0
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  generate: true
+  assets:
+    - assets/templates/
